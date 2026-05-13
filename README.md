@@ -4,7 +4,7 @@ Cost-aware AI task routing, budget, confidence, and SLO policy for Plasius agent
 
 ## Scope
 
-This package is part of the layered `@plasius/ai-*` package family. It is intentionally bootstrapped with a small public contract surface so implementation can evolve behind tracked Feature/Story/Task work.
+This package is part of the layered `@plasius/ai-*` package family. It provides deterministic route selection with confidence, budget, escalation, and fallback policy controls.
 
 ## Install
 
@@ -20,13 +20,31 @@ import { packageDescriptor } from "@plasius/ai-router";
 console.log(packageDescriptor.packageName);
 ```
 
+```ts
+import {
+  selectAiProviderRoute,
+  type AiRoutingPolicy,
+} from "@plasius/ai-router";
+import type { AiProviderCandidate } from "@plasius/ai-providers";
+
+declare const candidates: readonly AiProviderCandidate[];
+declare const requestId: string;
+
+declare const policy: AiRoutingPolicy;
+
+const decision = selectAiProviderRoute(requestId, candidates, policy);
+console.log(decision.mode, decision.selected?.providerId);
+```
+
 ## Development
 
 ```bash
 npm install
 npm run build
-npm test
+npm run typecheck
+npm run test
 npm run test:coverage
+npm run lint
 npm run pack:check
 ```
 
