@@ -289,8 +289,7 @@ function buildAssessments(
     const maxCost = policy.budget?.maxCostUsd;
     if (
       maxCost !== undefined &&
-      estimatedCostUsd !== undefined &&
-      estimatedCostUsd > maxCost
+      (estimatedCostUsd === undefined || estimatedCostUsd > maxCost)
     ) {
       reasons.push("cost-over-budget");
     }

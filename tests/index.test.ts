@@ -150,6 +150,45 @@ describe("@plasius/ai-router", () => {
     expect(decision.selected).toBeUndefined();
   });
 
+  it("returns unavailable when a cost budget requires missing estimates", () => {
+    const { candidates } = buildCandidateSet();
+    const missingCostCandidates: readonly AiProviderCandidate[] = candidates.map((candidate) => ({
+      ...candidate,
+      estimatedCostUsd: undefined,
+    }));
+
+    const decision = selectAiProviderRoute(
+      "req-missing-cost",
+      missingCostCandidates,
+      {
+        enabled: true,
+        minimumConfidence: 0,
+        budget: {
+          maxCostUsd: 10,
+        },
+        escalation: {
+          enabled: false,
+        },
+        fallback: {
+          enabled: false,
+        },
+      }
+    );
+
+    expect(decision.mode).toBe("unavailable");
+    expect(decision.selected).toBeUndefined();
+    expect(decision.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        providerId: "cheap-ai",
+        reasons: expect.arrayContaining(["cost-over-budget"]),
+      }),
+      expect.objectContaining({
+        providerId: "premium-ai",
+        reasons: expect.arrayContaining(["cost-over-budget"]),
+      }),
+    ]));
+  });
+
   it("returns unavailable when candidates are not ready for request", () => {
     const { candidates } = buildNotReadyCandidateSet();
     const request = baseRequest("req-not-ready");
