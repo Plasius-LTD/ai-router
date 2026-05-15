@@ -203,6 +203,33 @@ describe("@plasius/ai-router", () => {
     expect(decision.selected).toBeUndefined();
   });
 
+  it("returns unavailable when provider diagnostics include errors", () => {
+    const { candidates } = buildCandidateSet();
+    const diagnosticCandidates: readonly AiProviderCandidate[] = candidates.map((candidate) => ({
+      ...candidate,
+      readiness: {
+        ...candidate.readiness,
+        diagnostics: [
+          {
+            code: "provider-error",
+            message: "provider reported an error",
+            severity: "error",
+          },
+        ],
+      },
+    }));
+
+    const decision = selectAiProviderRoute("req-diagnostic-error", diagnosticCandidates, {
+      enabled: true,
+      minimumConfidence: 0,
+      escalation: { enabled: false },
+      fallback: { enabled: false },
+    });
+
+    expect(decision.mode).toBe("unavailable");
+    expect(decision.candidates[0]?.reasons).toContain("provider-not-ready");
+  });
+
   it("returns disabled when policy gate is off", () => {
     const { candidates } = buildCandidateSet();
 
@@ -259,6 +286,52 @@ describe("@plasius/ai-router", () => {
 
     expect(denyDecision.mode).toBe("selected");
     expect(denyDecision.selected?.providerId).toBe("cheap-ai");
+  });
+
+  it("returns unavailable when every provider is denied by policy", () => {
+    const { candidates } = buildCandidateSet();
+
+    const decision = selectAiProviderRoute("req-deny-all", candidates, {
+      enabled: true,
+      minimumConfidence: 0,
+      denyProviderIds: ["cheap-ai", "premium-ai"],
+      escalation: { enabled: false },
+      fallback: { enabled: false },
+    });
+
+    expect(decision.mode).toBe("unavailable");
+    expect(decision.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        providerId: "cheap-ai",
+        reasons: expect.arrayContaining(["provider-denied-by-policy"]),
+      }),
+      expect.objectContaining({
+        providerId: "premium-ai",
+        reasons: expect.arrayContaining(["provider-denied-by-policy"]),
+      }),
+    ]));
+  });
+
+  it("clamps confidence policy bounds before route selection", () => {
+    const { candidates } = buildCandidateSet();
+
+    const highThreshold = selectAiProviderRoute("req-high-threshold", candidates, {
+      enabled: true,
+      minimumConfidence: 2,
+      escalation: { enabled: false },
+      fallback: { enabled: false },
+    });
+    const lowThreshold = selectAiProviderRoute("req-low-threshold", candidates, {
+      enabled: true,
+      minimumConfidence: -1,
+      escalation: { enabled: false },
+      fallback: { enabled: false },
+    });
+
+    expect(highThreshold.policy.minimumConfidence).toBe(1);
+    expect(highThreshold.mode).toBe("unavailable");
+    expect(lowThreshold.policy.minimumConfidence).toBe(0);
+    expect(lowThreshold.mode).toBe("selected");
   });
 });
 
