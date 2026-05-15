@@ -274,12 +274,12 @@ function buildAssessments(
       reasons.push(allowed.reason);
     }
 
-    if (!isReady(candidate)) {
-      reasons.push("provider-not-ready");
-    }
-
     if (!candidate.config.enabled) {
       reasons.push("provider-disabled");
+    }
+
+    if (!isReady(candidate)) {
+      reasons.push("provider-not-ready");
     }
 
     const estimatedConfidence = estimateConfidence(candidate, policy, mode);
@@ -333,41 +333,19 @@ function hasBlockingReasons(
   includeConfidence: boolean
 ): boolean {
   const blocking = new Set<AiRoutingDecisionReason>(assessment.reasons);
-  return [...blocking].some((reason) => {
-    if (reason === "selected") {
-      return false;
-    }
+  const hardBlockingReasons: readonly AiRoutingDecisionReason[] = [
+    "provider-allowlist-miss",
+    "provider-denied-by-policy",
+    "provider-disabled",
+    "provider-not-ready",
+    "cost-over-budget",
+    "latency-over-budget",
+  ];
 
-    if (reason === "provider-allowlist-miss") {
-      return true;
-    }
-
-    if (reason === "provider-denied-by-policy") {
-      return true;
-    }
-
-    if (reason === "provider-not-ready") {
-      return true;
-    }
-
-    if (reason === "provider-disabled") {
-      return true;
-    }
-
-    if (reason === "cost-over-budget") {
-      return true;
-    }
-
-    if (reason === "latency-over-budget") {
-      return true;
-    }
-
-    if (reason === "confidence-under-threshold" && includeConfidence) {
-      return true;
-    }
-
-    return false;
-  });
+  return (
+    hardBlockingReasons.some((reason) => blocking.has(reason)) ||
+    (includeConfidence && blocking.has("confidence-under-threshold"))
+  );
 }
 
 function pickCandidate(
