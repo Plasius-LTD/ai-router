@@ -58,6 +58,57 @@ describe("@plasius/ai-router", () => {
     ]);
   });
 
+  it("uses default policy when no policy is supplied", () => {
+    const { candidates } = buildCandidateSet();
+
+    const decision = selectAiProviderRoute("req-default-policy", candidates);
+
+    expect(decision.mode).toBe("selected");
+    expect(decision.selected?.providerId).toBe("premium-ai");
+    expect(decision.selected?.estimatedConfidence).toBe(0.96);
+  });
+
+  it("orders equal-cost equal-confidence candidates by provider id", () => {
+    const { candidates } = buildCandidateSet();
+    const tiedCandidates: readonly AiProviderCandidate[] = candidates.map((candidate) => ({
+      ...candidate,
+      estimatedCostUsd: 1,
+    }));
+
+    const decision = selectAiProviderRoute("req-tied-candidates", tiedCandidates, {
+      enabled: true,
+      minimumConfidence: 0,
+      confidenceEstimator: confidenceEstimator({
+        "cheap-ai": 0.8,
+        "premium-ai": 0.8,
+      }),
+    });
+
+    expect(decision.mode).toBe("selected");
+    expect(decision.selected?.providerId).toBe("cheap-ai");
+    expect(decision.candidates.map((candidate) => candidate.providerId)).toEqual([
+      "cheap-ai",
+      "premium-ai",
+    ]);
+  });
+
+  it("normalizes non-finite confidence estimates to zero", () => {
+    const { candidates } = buildCandidateSet();
+
+    const decision = selectAiProviderRoute("req-non-finite-confidence", candidates, {
+      enabled: true,
+      minimumConfidence: 0,
+      confidenceEstimator: confidenceEstimator({
+        "cheap-ai": Number.NaN,
+        "premium-ai": Number.NaN,
+      }),
+    });
+
+    expect(decision.mode).toBe("selected");
+    expect(decision.selected?.providerId).toBe("cheap-ai");
+    expect(decision.selected?.estimatedConfidence).toBe(0);
+  });
+
   it("escalates by relaxing confidence and cost constraints", () => {
     const { candidates } = buildCandidateSet();
     const request = baseRequest("req-escalate");
@@ -122,6 +173,14 @@ describe("@plasius/ai-router", () => {
     expect(decision.mode).toBe("unavailable");
     expect(decision.selected).toBeUndefined();
     expect(decision.unavailableReasons).toContain("no-eligible-candidate");
+    expect(decision.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        reasons: expect.arrayContaining([
+          "provider-disabled",
+          "provider-not-ready",
+        ]),
+      }),
+    ]));
   });
 
   it("returns unavailable when every candidate exceeds latency budget and all policies are disabled", () => {
