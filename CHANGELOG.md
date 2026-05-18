@@ -7,13 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 - **Added**
-  - (placeholder)
+  - Added `selectAiProviderRoute` with multi-phase policy selection for primary, escalation, and fallback routing.
+  - Added routing policy contracts for confidence, budget, allow/deny lists, and decision telemetry.
 
 - **Changed**
-  - (placeholder)
+  - Updated package feature flag contract to `ai.cost-aware-routing.enabled`.
+  - Added dependency on `@plasius/ai-providers` and routing policy tests.
 
 - **Fixed**
-  - (placeholder)
+  - Budgeted routing now treats missing provider cost estimates as over budget instead of selectable.
 
 - **Security**
   - (placeholder)
