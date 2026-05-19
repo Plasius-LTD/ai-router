@@ -92,6 +92,34 @@ describe("@plasius/ai-router", () => {
     ]);
   });
 
+  it("orders equal-cost candidates by confidence before provider id", () => {
+    const { candidates } = buildCandidateSet();
+    const tiedCandidates: readonly AiProviderCandidate[] = candidates.map((candidate) => ({
+      ...candidate,
+      estimatedCostUsd: 1,
+    }));
+
+    const decision = selectAiProviderRoute(
+      "req-tied-confidence-candidates",
+      tiedCandidates,
+      {
+        enabled: true,
+        minimumConfidence: 0,
+        confidenceEstimator: confidenceEstimator({
+          "cheap-ai": 0.7,
+          "premium-ai": 0.9,
+        }),
+      }
+    );
+
+    expect(decision.mode).toBe("selected");
+    expect(decision.selected?.providerId).toBe("premium-ai");
+    expect(decision.candidates.map((candidate) => candidate.providerId)).toEqual([
+      "premium-ai",
+      "cheap-ai",
+    ]);
+  });
+
   it("normalizes non-finite confidence estimates to zero", () => {
     const { candidates } = buildCandidateSet();
 
@@ -107,6 +135,35 @@ describe("@plasius/ai-router", () => {
     expect(decision.mode).toBe("selected");
     expect(decision.selected?.providerId).toBe("cheap-ai");
     expect(decision.selected?.estimatedConfidence).toBe(0);
+  });
+
+  it("uses the standard confidence baseline when provider tier is absent", () => {
+    const { candidates } = buildCandidateSet();
+    const candidate = candidates[0];
+    if (!candidate) {
+      throw new Error("Expected a test provider candidate.");
+    }
+    const missingTierCandidates: readonly AiProviderCandidate[] = [
+      {
+        ...candidate,
+        config: {
+          ...candidate.config,
+          tier: undefined as never,
+        },
+      },
+    ];
+
+    const decision = selectAiProviderRoute(
+      "req-missing-tier-baseline",
+      missingTierCandidates,
+      {
+        enabled: true,
+        minimumConfidence: 0.8,
+      }
+    );
+
+    expect(decision.mode).toBe("selected");
+    expect(decision.selected?.estimatedConfidence).toBe(0.82);
   });
 
   it("escalates by relaxing confidence and cost constraints", () => {

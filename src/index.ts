@@ -102,17 +102,33 @@ export interface AiRoutingDecision {
   readonly unavailableReasons: readonly AiRoutingDecisionReason[];
 }
 
-const DEFAULT_ROUTING_POLICY: AiRoutingPolicy = {
+type NormalizedAiRoutingPolicy = Readonly<
+  Omit<AiRoutingPolicy, "minimumConfidence" | "escalation" | "fallback"> & {
+    readonly minimumConfidence: number;
+    readonly escalation: Readonly<Required<AiRoutingEscalationPolicy>>;
+    readonly fallback: Readonly<Required<AiRoutingFallbackPolicy>>;
+  }
+>;
+
+const DEFAULT_ROUTING_ESCALATION_POLICY: Readonly<
+  Required<AiRoutingEscalationPolicy>
+> = Object.freeze({
+  enabled: true,
+  overageMultiplier: AI_ROUTER_DEFAULT_BUDGET_OVERAGE_MULTIPLIER,
+});
+
+const DEFAULT_ROUTING_FALLBACK_POLICY: Readonly<
+  Required<AiRoutingFallbackPolicy>
+> = Object.freeze({
+  enabled: true,
+});
+
+const DEFAULT_ROUTING_POLICY: NormalizedAiRoutingPolicy = Object.freeze({
   enabled: true,
   minimumConfidence: AI_ROUTER_DEFAULT_MINIMUM_CONFIDENCE,
-  escalation: {
-    enabled: true,
-    overageMultiplier: AI_ROUTER_DEFAULT_BUDGET_OVERAGE_MULTIPLIER,
-  },
-  fallback: {
-    enabled: true,
-  },
-};
+  escalation: DEFAULT_ROUTING_ESCALATION_POLICY,
+  fallback: DEFAULT_ROUTING_FALLBACK_POLICY,
+});
 
 const DEFAULT_BASELINE_CONFIDENCE: Record<AiProviderTier, number> = {
   free: 0.45,
@@ -124,12 +140,14 @@ const DEFAULT_BASELINE_CONFIDENCE: Record<AiProviderTier, number> = {
 const DECISION_COMPARATOR = (left: AiRoutingCandidateAssessment, right: AiRoutingCandidateAssessment): number => {
   const leftCost = left.estimatedCostUsd ?? Number.POSITIVE_INFINITY;
   const rightCost = right.estimatedCostUsd ?? Number.POSITIVE_INFINITY;
-  if (leftCost !== rightCost) {
-    return leftCost < rightCost ? -1 : 1;
+  const costComparison = leftCost - rightCost;
+  if (costComparison !== 0) {
+    return costComparison;
   }
 
-  if (left.estimatedConfidence !== right.estimatedConfidence) {
-    return left.estimatedConfidence > right.estimatedConfidence ? -1 : 1;
+  const confidenceComparison = right.estimatedConfidence - left.estimatedConfidence;
+  if (confidenceComparison !== 0) {
+    return confidenceComparison;
   }
 
   return left.providerId.localeCompare(right.providerId);
@@ -161,30 +179,21 @@ function asFrozenReasons(
   return Object.freeze([...reasons]);
 }
 
-function normalizePolicy(policy: AiRoutingPolicy = DEFAULT_ROUTING_POLICY): Readonly<AiRoutingPolicy> {
+function normalizePolicy(policy: AiRoutingPolicy = DEFAULT_ROUTING_POLICY): NormalizedAiRoutingPolicy {
   const minimumConfidence = clampConfidence(
-    policy.minimumConfidence ?? DEFAULT_ROUTING_POLICY.minimumConfidence ?? AI_ROUTER_DEFAULT_MINIMUM_CONFIDENCE
+    policy.minimumConfidence ?? DEFAULT_ROUTING_POLICY.minimumConfidence
   );
-  const normalizedEscalation: Readonly<AiRoutingEscalationPolicy> = policy.escalation
-    ? Object.freeze({
-        enabled: normalizeBoolean(policy.escalation.enabled),
-        overageMultiplier:
-          policy.escalation.overageMultiplier ??
-          AI_ROUTER_DEFAULT_BUDGET_OVERAGE_MULTIPLIER,
-      })
-    : Object.freeze({
-        enabled: normalizeBoolean(DEFAULT_ROUTING_POLICY.escalation?.enabled ?? true),
-        overageMultiplier: DEFAULT_ROUTING_POLICY.escalation?.overageMultiplier ??
-          AI_ROUTER_DEFAULT_BUDGET_OVERAGE_MULTIPLIER,
-      });
-
-  const normalizedFallback: Readonly<AiRoutingFallbackPolicy> = policy.fallback
-    ? Object.freeze({
-        enabled: normalizeBoolean(policy.fallback.enabled),
-      })
-    : Object.freeze({
-        enabled: normalizeBoolean(DEFAULT_ROUTING_POLICY.fallback?.enabled ?? true),
-      });
+  const escalation = policy.escalation ?? DEFAULT_ROUTING_POLICY.escalation;
+  const fallback = policy.fallback ?? DEFAULT_ROUTING_POLICY.fallback;
+  const normalizedEscalation = Object.freeze({
+    enabled: normalizeBoolean(escalation.enabled),
+    overageMultiplier:
+      escalation.overageMultiplier ??
+      DEFAULT_ROUTING_POLICY.escalation.overageMultiplier,
+  });
+  const normalizedFallback = Object.freeze({
+    enabled: normalizeBoolean(fallback.enabled),
+  });
 
   return Object.freeze({
     enabled: normalizeBoolean(policy.enabled),
@@ -204,7 +213,7 @@ function normalizePolicy(policy: AiRoutingPolicy = DEFAULT_ROUTING_POLICY): Read
 
 function estimateConfidence(
   candidate: AiProviderCandidate,
-  policy: Readonly<AiRoutingPolicy>,
+  policy: NormalizedAiRoutingPolicy,
   mode: Exclude<AiRoutingDecisionMode, "unavailable" | "disabled">
 ): number {
   const baseline = DEFAULT_BASELINE_CONFIDENCE[candidate.config.tier ?? "standard"];
@@ -233,7 +242,7 @@ function isReady(candidate: AiProviderCandidate): boolean {
 
 function isAllowedByPolicy(
   candidate: AiProviderCandidate,
-  policy: Readonly<AiRoutingPolicy>
+  policy: NormalizedAiRoutingPolicy
 ): {
   allowed: boolean;
   reason?: AiRoutingDecisionReason;
@@ -264,7 +273,7 @@ function estimateCost(candidate: AiProviderCandidate): number | undefined {
 function buildAssessments(
   requestId: string,
   candidates: readonly AiProviderCandidate[],
-  policy: Readonly<AiRoutingPolicy>,
+  policy: NormalizedAiRoutingPolicy,
   mode: Exclude<AiRoutingDecisionMode, "unavailable" | "disabled">
 ): readonly AiRoutingCandidateAssessment[] {
   const evaluations = candidates.map((candidate) => {
@@ -303,8 +312,7 @@ function buildAssessments(
       reasons.push("latency-over-budget");
     }
 
-    const minimumConfidence = policy.minimumConfidence ?? AI_ROUTER_DEFAULT_MINIMUM_CONFIDENCE;
-    if (minimumConfidence > estimatedConfidence) {
+    if (policy.minimumConfidence > estimatedConfidence) {
       reasons.push("confidence-under-threshold");
     }
 
@@ -359,7 +367,7 @@ function pickCandidate(
 
 function createUnavailableDecision(
   requestId: string,
-  policy: Readonly<AiRoutingPolicy>,
+  policy: NormalizedAiRoutingPolicy,
   candidates: readonly AiProviderCandidate[]
 ): AiRoutingDecision {
   const assessments = buildAssessments(
@@ -415,7 +423,7 @@ export function selectAiProviderRoute(
   }
 
   const escalation = normalizedPolicy.escalation;
-  const escalationPolicy: Readonly<AiRoutingPolicy> = escalation?.enabled
+  const escalationPolicy: NormalizedAiRoutingPolicy = escalation.enabled
     ? Object.freeze({
         ...normalizedPolicy,
         minimumConfidence: 0,
@@ -424,14 +432,13 @@ export function selectAiProviderRoute(
               ...normalizedPolicy.budget,
               maxCostUsd:
                 normalizedPolicy.budget.maxCostUsd *
-                (escalation.overageMultiplier ??
-                  AI_ROUTER_DEFAULT_BUDGET_OVERAGE_MULTIPLIER),
+                escalation.overageMultiplier,
             })
           : normalizedPolicy.budget,
       })
     : normalizedPolicy;
 
-  if (escalation?.enabled) {
+  if (escalation.enabled) {
     const escalatedAssessments = buildAssessments(
       requestId,
       candidates,
@@ -452,7 +459,7 @@ export function selectAiProviderRoute(
     }
   }
 
-  if (normalizedPolicy.fallback?.enabled) {
+  if (normalizedPolicy.fallback.enabled) {
     const fallbackAssessments = buildAssessments(
       requestId,
       candidates,
