@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - Added dependency on `@plasius/ai-providers` and routing policy tests.
 
 - **Fixed**
+  - Release automation now prepares version/changelog updates on a release PR before publishing from protected `main`.
   - Budgeted routing now treats missing provider cost estimates as over budget instead of selectable.
 
 - **Security**
