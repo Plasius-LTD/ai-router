@@ -1,6 +1,6 @@
 {
   "name": "@plasius/ai-router",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Cost-aware AI task routing, budget, confidence, and SLO policy for Plasius agentic AI workloads.",
   "type": "module",
   "sideEffects": false,
