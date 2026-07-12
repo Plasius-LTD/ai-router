@@ -10,6 +10,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - (placeholder)
 
 - **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.1.7] - 2026-07-12
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
   - Refreshed the lockfile to consume `@plasius/ai-config@0.1.8`, `@plasius/ai-providers@0.1.9`, and the latest stable compatible ESLint and Vitest releases.
 
 - **Fixed**
@@ -103,3 +117,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 [0.1.4]: https://github.com/Plasius-LTD/ai-router/releases/tag/v0.1.4
 [0.1.5]: https://github.com/Plasius-LTD/ai-router/releases/tag/v0.1.5
 [0.1.6]: https://github.com/Plasius-LTD/ai-router/releases/tag/v0.1.6
+[0.1.7]: https://github.com/Plasius-LTD/ai-router/releases/tag/v0.1.7
