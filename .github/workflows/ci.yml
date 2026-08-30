@@ -103,9 +103,9 @@ jobs:
           echo "Line coverage: ${PCT}% (${LH}/${LF})"
 
           awk -v pct="$PCT" 'BEGIN{exit(pct >= 80 ? 0 : 1)}' || {
-          echo "Coverage gate failed: ${PCT}% < 80%"
-          exit 1
-        }
+            echo "Coverage gate failed: ${PCT}% < 80%"
+            exit 1
+          }
 
   build-test-main:
     needs: trusted_head

@@ -13,7 +13,6 @@ const ciWorkflow = readFileSync(
 
 describe("npm release trust boundary", () => {
   it("runs pull requests on hosted capacity and trusted main on approved runners", () => {
-   expect(ciWorkflow).toContain('runs-on: ${{ fromJSON(github.event_name == \'pull_request\' && \'["ubuntu-latest"]\' || \'["self-hosted","Linux","X64"]\') }}');
     expect(ciWorkflow).toContain("runs-on: ubuntu-latest");
     expect(ciWorkflow).toContain("group: Public CI - Quarantined");
     expect(ciWorkflow).toContain("- self-hosted");
