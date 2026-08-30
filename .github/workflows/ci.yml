@@ -31,9 +31,9 @@ jobs:
 
   build-test:
     needs: trusted_head
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    # Trusted main jobs are pinned to the quarantined public-CI runner group.
-    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["self-hosted","Linux","X64"]') }}
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+    # Pull requests run on GitHub-hosted capacity.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -103,6 +103,20 @@ jobs:
           echo "Line coverage: ${PCT}% (${LH}/${LF})"
 
           awk -v pct="$PCT" 'BEGIN{exit(pct >= 80 ? 0 : 1)}' || {
-            echo "Coverage gate failed: ${PCT}% < 80%"
-            exit 1
-          }
+          echo "Coverage gate failed: ${PCT}% < 80%"
+          exit 1
+        }
+
+  build-test-main:
+    needs: trusted_head
+    if: ${{ github.event_name != 'pull_request' }}
+    # Trusted main jobs are pinned to the quarantined public-CI runner group.
+    runs-on:
+      group: Public CI - Quarantined
+      labels:
+        - self-hosted
+        - Linux
+        - X64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/package-ci
