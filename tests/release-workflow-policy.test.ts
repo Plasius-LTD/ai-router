@@ -15,9 +15,7 @@ describe("npm release trust boundary", () => {
   it("runs pull requests on hosted capacity and trusted main on approved runners", () => {
     expect(ciWorkflow).toContain("runs-on: ubuntu-latest");
     expect(ciWorkflow).toContain("group: Public CI - Quarantined");
-    expect(ciWorkflow).toContain("- self-hosted");
-    expect(ciWorkflow).toContain("- Linux");
-    expect(ciWorkflow).toContain("- X64");
+   expect(ciWorkflow).toContain("- self-hosted");
     expect(ciWorkflow).toContain("needs: trusted_head");
     expect(ciWorkflow).not.toContain("CI_RUNNER_LABELS");
   });

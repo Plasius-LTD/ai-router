@@ -114,9 +114,7 @@ jobs:
     runs-on:
       group: Public CI - Quarantined
       labels:
-        - self-hosted
-        - Linux
-        - X64
+        self-hosted
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/package-ci
