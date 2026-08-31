@@ -1,5 +1,13 @@
 # @plasius/ai-router
 
+[![npm version](https://img.shields.io/npm/v/@plasius/ai-router.svg)](https://www.npmjs.com/package/@plasius/ai-router)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Plasius-LTD/ai-router/ci.yml?branch=main&label=build&style=flat)](https://github.com/Plasius-LTD/ai-router/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/codecov/c/github/Plasius-LTD/ai-router)](https://codecov.io/gh/Plasius-LTD/ai-router)
+[![License](https://img.shields.io/github/license/Plasius-LTD/ai-router)](./LICENSE)
+[![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-yes-blue.svg)](./CODE_OF_CONDUCT.md)
+[![Security Policy](https://img.shields.io/badge/security%20policy-yes-orange.svg)](./SECURITY.md)
+[![Changelog](https://img.shields.io/badge/changelog-md-blue.svg)](./CHANGELOG.md)
+
 Cost-aware AI task routing, budget, confidence, and SLO policy for Plasius agentic AI workloads.
 
 ## Scope
