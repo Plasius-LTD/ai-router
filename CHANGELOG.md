@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - (placeholder)
 
 - **Fixed**
+  - Restored exact branch and main validation on explicit GitHub-hosted runners with package-manager caching disabled and public-package integrity enforced.
   - (placeholder)
 
 - **Security**

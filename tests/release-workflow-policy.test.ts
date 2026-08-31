@@ -12,13 +12,15 @@ const ciWorkflow = readFileSync(
 );
 
 describe("npm release trust boundary", () => {
-  it("runs pull requests on hosted capacity and trusted main on approved runners", () => {
+  it("runs reviewed validation on explicit hosted capacity without package caching", () => {
+    expect(ciWorkflow).toContain("workflow_dispatch:");
     expect(ciWorkflow).toContain("runs-on: ubuntu-latest");
-    expect(ciWorkflow).toContain("fromJSON(github.event_name == 'pull_request'");
-    expect(ciWorkflow).toContain('["ubuntu-latest"]');
-    expect(ciWorkflow).toContain('["self-hosted","Linux","X64"]');
+    expect(ciWorkflow).toContain("package-manager-cache: false");
+    expect(ciWorkflow).toContain("run: npm run pack:check");
     expect(ciWorkflow).toContain("needs: trusted_head");
     expect(ciWorkflow).not.toContain("CI_RUNNER_LABELS");
+    expect(ciWorkflow).not.toContain("self-hosted");
+    expect(ciWorkflow).not.toContain("fromJSON");
   });
 
   it("uses hosted OIDC publication without a long-lived npm write token", () => {

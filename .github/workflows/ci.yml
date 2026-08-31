@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
@@ -31,16 +32,15 @@ jobs:
 
   build-test:
     needs: trusted_head
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-    # Pull requests run on GitHub-hosted capacity.
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
-          cache: 'npm'
+          package-manager-cache: false
 
       - name: Install deps
         run: npm ci --no-fund --no-audit --legacy-peer-deps
@@ -56,6 +56,9 @@ jobs:
 
       - name: Build
         run: npm run build --if-present
+
+      - name: Public package integrity
+        run: npm run pack:check
 
       - name: Test with coverage
         run: |
@@ -106,12 +109,3 @@ jobs:
             echo "Coverage gate failed: ${PCT}% < 80%"
             exit 1
           }
-
-  build-test-main:
-    needs: trusted_head
-    if: ${{ github.event_name != 'pull_request' }}
-    # Match the approved Schema runner selection for trusted main validation.
-    runs-on: ${{ fromJSON(github.event_name == 'pull_request' && '["ubuntu-latest"]' || '["self-hosted","Linux","X64"]') }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/package-ci
