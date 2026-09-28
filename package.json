@@ -54,7 +54,7 @@
   "author": "Plasius LTD <development@plasius.co.uk>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@plasius/ai-providers": "^0.1.9"
+    "@plasius/ai-providers": "^0.1.10"
   },
   "repository": {
     "type": "git",
@@ -66,7 +66,7 @@
   "homepage": "https://github.com/Plasius-LTD/ai-router#readme",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@plasius/ai-config": "^0.1.9",
+    "@plasius/ai-config": "^0.1.10",
     "@types/node": "^26.4.0",
     "@typescript-eslint/eslint-plugin": "^8.69.0",
     "@typescript-eslint/parser": "^8.69.0",
