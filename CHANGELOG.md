@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.1.10] - 2026-09-28
+
 - Refresh npm dependency lockfile to current supported stable versions (weekly maintenance, 2026-09-28). Refresh published Plasius package baselines after upstream releases.
 
 - **Added**
@@ -157,3 +171,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 [0.1.7]: https://github.com/Plasius-LTD/ai-router/releases/tag/v0.1.7
 [0.1.8]: https://github.com/Plasius-LTD/ai-router/releases/tag/v0.1.8
 [0.1.9]: https://github.com/Plasius-LTD/ai-router/releases/tag/v0.1.9
+[0.1.10]: https://github.com/Plasius-LTD/ai-router/releases/tag/v0.1.10
