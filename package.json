@@ -54,7 +54,7 @@
   "author": "Plasius LTD <development@plasius.co.uk>",
   "license": "Apache-2.0",
   "dependencies": {
-    "@plasius/ai-providers": "^0.1.13"
+    "@plasius/ai-providers": "^0.1.15"
   },
   "repository": {
     "type": "git",
